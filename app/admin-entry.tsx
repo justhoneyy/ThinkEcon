@@ -19,7 +19,7 @@ function Inner() {
   useEffect(() => {
     if (!isSignedIn) return;
     let off = false;
-    fetch("/api/admin/me", { cache: "no-store" }).then((r) => !off && setState(r.ok ? "ok" : "denied")).catch(() => !off && setState("denied"));
+    fetch("/api?p=admin/me", { cache: "no-store" }).then((r) => !off && setState(r.ok ? "ok" : "denied")).catch(() => !off && setState("denied"));
     return () => { off = true; };
   }, [isSignedIn]);
   if (!isLoaded) return <Gate title="Loading…" />;

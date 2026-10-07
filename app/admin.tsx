@@ -7,7 +7,7 @@ import "./admin.css";
 
 /* ───────────── api ───────────── */
 async function api<T = unknown>(path: string, method = "GET", body?: unknown): Promise<T> {
-  const r = await fetch(`/api/admin/${path}`, { method, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" });
+  const r = await fetch(`/api?p=admin/${path}`, { method, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined, cache: "no-store" });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((d as { error?: string }).error || "Request failed");
   return d as T;
@@ -28,7 +28,7 @@ function ImageInput({ value, onChange }: { value: string; onChange: (v: string) 
   const ref = useRef<HTMLInputElement>(null); const [busy, setBusy] = useState(false); const [err, setErr] = useState("");
   const pick = async (f?: File) => {
     if (!f) return; setBusy(true); setErr("");
-    try { const fd = new FormData(); fd.append("file", f); const r = await fetch("/api/admin/upload", { method: "POST", body: fd }); const d = await r.json(); if (!r.ok) throw new Error(d.error); onChange(d.url); } catch (e) { setErr((e as Error).message); }
+    try { const fd = new FormData(); fd.append("file", f); const r = await fetch("/api?p=admin/upload", { method: "POST", body: fd }); const d = await r.json(); if (!r.ok) throw new Error(d.error); onChange(d.url); } catch (e) { setErr((e as Error).message); }
     setBusy(false); if (ref.current) ref.current.value = "";
   };
   const src = value ? (value.startsWith("http") || value.startsWith("/") ? value : value.startsWith("local:") ? `/discussion/${value.slice(6)}-web.jpg` : `https://images.unsplash.com/${value}?w=200&q=60`) : "";
@@ -40,13 +40,13 @@ function MarkdownInput({ value, onChange, onTitle }: { value: string; onChange: 
   const importDoc = async (f?: File) => {
     if (!f) return; setMsg("Converting…");
     const fd = new FormData(); fd.append("file", f);
-    const r = await fetch("/api/admin/parse-document", { method: "POST", body: fd }); const d = await r.json();
+    const r = await fetch("/api?p=admin/parse-document", { method: "POST", body: fd }); const d = await r.json();
     if (!r.ok) setMsg(d.error || "Could not import."); else { onChange(d.body); onTitle?.(String(d.fileName).replace(/\.(md|markdown|pdf)$/i, "").replace(/[-_]+/g, " ")); setMsg(d.pages ? `Converted ${d.pages} PDF pages.` : "Markdown imported."); }
     if (file.current) file.current.value = "";
   };
   const addImage = async (f?: File) => {
     if (!f) return; const fd = new FormData(); fd.append("file", f);
-    const r = await fetch("/api/admin/upload", { method: "POST", body: fd }); const d = await r.json();
+    const r = await fetch("/api?p=admin/upload", { method: "POST", body: fd }); const d = await r.json();
     if (r.ok) onChange(`${value.trim()}\n\nimage:${d.url}\n\n`); else setMsg(d.error || "Upload failed.");
     if (imgRef.current) imgRef.current.value = "";
   };

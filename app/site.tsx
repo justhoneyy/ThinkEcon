@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { AdminEntry } from "./admin-entry";
-import { createContext, FormEvent, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, FormEvent, ReactNode, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { ArrowLeft, ArrowUpRight, AtSign, CircleUserRound, Clock3, Link2, Mail, Menu, UsersRound, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -48,6 +47,19 @@ function useApi<T>(url: string | null) {
   return { data: fresh ? (state.data as T | null) : null, error: fresh && state.error };
 }
 
+
+/* current URL path, kept in sync with Next's client navigation (works with the catch-all rewrite) */
+const listeners = new Set<() => void>(); let patched = false;
+function subscribePath(cb: () => void) {
+  if (!patched) {
+    patched = true;
+    for (const m of ["pushState", "replaceState"] as const) { const o = history[m]; history[m] = function (this: History, ...a: Parameters<History["pushState"]>) { const r = o.apply(this, a); listeners.forEach((l) => l()); return r; }; }
+    window.addEventListener("popstate", () => listeners.forEach((l) => l()));
+  }
+  listeners.add(cb); return () => { listeners.delete(cb); };
+}
+const usePath = () => useSyncExternalStore(subscribePath, () => window.location.pathname, () => "/");
+
 const SettingsCtx = createContext<Settings | null>(null);
 const useSettings = () => useContext(SettingsCtx);
 const NotFound = () => <main className="article-page"><article><h1>Not found.</h1><p className="article-summary"><Link href="/">Go back home</Link></p></article></main>;
@@ -61,7 +73,7 @@ function AuthControls() {
 }
 function Authed() {
   const { isSignedIn, isLoaded } = useUser();
-  const { data } = useApi<{ admin: boolean }>(isSignedIn ? "/api/me" : null);
+  const { data } = useApi<{ admin: boolean }>(isSignedIn ? "/api?p=me" : null);
   if (!isLoaded) return null;
   if (isSignedIn) return <div className="auth-controls">{data?.admin && <a href="/admin">Admin</a>}<UserButton /></div>;
   return <SignInButton mode="modal"><button className="sign-in auth-anon" aria-label="Sign in"><CircleUserRound size={25} /></button></SignInButton>;
@@ -85,9 +97,9 @@ function useScrollReveal(off: boolean) {
 export function Shell({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
-  const { data: settings } = useApi<Settings>("/api/settings");
+  const { data: settings } = useApi<Settings>("/api?p=settings");
   useEffect(() => setReady(true), []);
-  const bare = usePathname().startsWith("/admin");
+  const bare = usePath().startsWith("/admin");
   useScrollReveal(bare);
   if (!ready) return null; // the server sends an empty page; everything renders in the browser
   if (bare) return <>{children}</>;
@@ -154,7 +166,7 @@ function LeadershipContacts({ heads }: { heads: Head[] }) {
 
 function Home() {
   const s = useSettings();
-  const { data } = useApi<{ post: Post | null; podcast: Podcast | null; event: EventItem | null; heads: Head[] }>("/api/home");
+  const { data } = useApi<{ post: Post | null; podcast: Podcast | null; event: EventItem | null; heads: Head[] }>("/api?p=home");
   if (!s || !data) return null;
   const { post, podcast, event, heads } = data;
   const lines = s.hero.title.split("\n");
@@ -176,7 +188,7 @@ function Home() {
 
 /* ───────────── journal ───────────── */
 function Journal() {
-  const { data: posts } = useApi<Post[]>("/api/posts");
+  const { data: posts } = useApi<Post[]>("/api?p=posts");
   if (!posts) return null;
   const [featured, ...more] = posts;
   return <main className="journal-page">
@@ -194,24 +206,24 @@ function Comments({ slug }: { slug: string }) {
 }
 function AuthComments({ slug }: { slug: string }) {
   const { isSignedIn } = useUser();
-  const { data: me } = useApi<{ admin: boolean }>(isSignedIn ? "/api/me" : null);
-  const { data } = useApi<{ id: string; author_name: string; body: string }[]>(`/api/comments/${encodeURIComponent(slug)}`);
+  const { data: me } = useApi<{ admin: boolean }>(isSignedIn ? "/api?p=me" : null);
+  const { data } = useApi<{ id: string; author_name: string; body: string }[]>(`/api?p=comments/${encodeURIComponent(slug)}`);
   const [added, setAdded] = useState<{ id: string; author_name: string; body: string }[]>([]);
   const [gone, setGone] = useState<string[]>([]);
   const [text, setText] = useState(""); const [sending, setSending] = useState(false);
   const list = [...added, ...(data || [])].filter((c) => !gone.includes(c.id));
   const post = async () => {
     if (!text.trim()) return; setSending(true);
-    const r = await fetch("/api/comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postSlug: slug, body: text }) });
+    const r = await fetch("/api?p=comments", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postSlug: slug, body: text }) });
     if (r.ok) { const c = await r.json(); setAdded((a) => [c, ...a]); setText(""); }
     setSending(false);
   };
-  const remove = async (id: string) => { const r = await fetch(`/api/admin/comments/${id}`, { method: "DELETE" }); if (r.ok) setGone((g) => [...g, id]); };
+  const remove = async (id: string) => { const r = await fetch(`/api?p=admin/comments/${id}`, { method: "DELETE" }); if (r.ok) setGone((g) => [...g, id]); };
   return <section className="comments"><h2>Join the discussion.</h2>{isSignedIn ? <div className="comment-form"><textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Add a thought" /><button onClick={post} disabled={sending}>{sending ? "Posting" : "Post comment"}</button></div> : <SignInButton mode="modal"><button className="sign-in">Sign in to comment</button></SignInButton>}<div className="comment-list">{list.map((c) => <article key={c.id}><div className="comment-meta"><strong>{c.author_name}</strong>{me?.admin && <button onClick={() => remove(c.id)}>Delete</button>}</div><p>{c.body}</p></article>)}</div></section>;
 }
 
 function Article({ slug }: { slug: string }) {
-  const { data: post, error } = useApi<Post>(`/api/posts/${encodeURIComponent(slug)}`);
+  const { data: post, error } = useApi<Post>(`/api?p=posts/${encodeURIComponent(slug)}`);
   if (error) return <NotFound />;
   if (!post) return null;
   return <main className="journal-article-page"><article>
@@ -223,32 +235,32 @@ function Article({ slug }: { slug: string }) {
 
 /* ───────────── podcasts / events / discussion / heads ───────────── */
 function Podcasts() {
-  const { data } = useApi<Podcast[]>("/api/podcasts");
+  const { data } = useApi<Podcast[]>("/api?p=podcasts");
   if (!data) return null;
   return <main className="podcasts-page"><h1>Podcasts.</h1><div className="podcast-grid">{data.map((e) => <article key={e.id}><iframe src={embed(e.video_url)} title={e.title} allowFullScreen /><h2>{e.title}</h2><p>{e.description}</p></article>)}{!data.length && <p>New episodes will appear here.</p>}</div></main>;
 }
 
 function Events() {
-  const { data } = useApi<EventItem[]>("/api/events");
+  const { data } = useApi<EventItem[]>("/api?p=events");
   if (!data) return null;
   return <main className="events-page"><h1>Events.</h1><div className="events-list">{data.map((e) => <Link href={`/events/${e.slug}`} className="event-card" key={e.slug}><div className="event-image" style={{ backgroundImage: `url(${mediaUrl(e.image_url, "photo-1522202176988-66273c2fd55f")})` }} /><h2>{e.title}</h2></Link>)}{!data.length && <p>No events have been announced.</p>}</div></main>;
 }
 
 function EventDetail({ slug }: { slug: string }) {
-  const { data: e, error } = useApi<EventItem>(`/api/events/${encodeURIComponent(slug)}`);
+  const { data: e, error } = useApi<EventItem>(`/api?p=events/${encodeURIComponent(slug)}`);
   if (error) return <NotFound />;
   if (!e) return null;
   return <main className="article-page event-detail"><article><h1>{e.title}</h1>{e.event_date && <p className="event-date">{new Date(`${e.event_date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}{e.location ? ` · ${e.location}` : ""}</p>}<div className="article-cover" style={{ backgroundImage: `url(${mediaUrl(e.image_url, "photo-1522202176988-66273c2fd55f")})` }} /><ArticleContent body={e.body || e.description} />{(e.application_url || e.meeting_url) && <div className="event-links">{e.application_url && <a href={e.application_url}>Apply</a>}{e.meeting_url && <a href={e.meeting_url}>Meeting link</a>}</div>}</article></main>;
 }
 
 function Discussion() {
-  const { data } = useApi<Announcement[]>("/api/announcements");
+  const { data } = useApi<Announcement[]>("/api?p=announcements");
   if (!data) return null;
   return <main className="podcasts-page discussion-page"><h1>Discussion.</h1>{data.length ? data.map((d) => <section className="discussion-feature" key={d.slug}><Link href={`/announcements/${d.slug}`}><div style={{ backgroundImage: `url(${mediaUrl(d.cover, "photo-1528605248644-14dd04022da1")})` }} /><h2>{d.title}</h2><p>{d.summary}</p></Link></section>) : <p>Discussion updates will appear here.</p>}</main>;
 }
 
 function AnnouncementDetail({ slug }: { slug: string }) {
-  const { data: a, error } = useApi<Announcement>(`/api/announcements/${encodeURIComponent(slug)}`);
+  const { data: a, error } = useApi<Announcement>(`/api?p=announcements/${encodeURIComponent(slug)}`);
   if (error) return <NotFound />;
   if (!a) return null;
   return <main className="article-page"><article><h1>{a.title}</h1><p className="article-summary">{a.summary}</p><div className="article-cover" style={{ backgroundImage: `url(${mediaUrl(a.cover, "photo-1491309055486-24ae51108062")})` }} /><ArticleContent body={a.body} /></article></main>;
@@ -258,7 +270,7 @@ function ReplyBox({ id, onAdd }: { id: string; onAdd: (r: Reply) => void }) {
   const { isSignedIn } = useUser(); const [body, setBody] = useState(""); const [err, setErr] = useState("");
   const submit = async (ev: FormEvent) => {
     ev.preventDefault();
-    const r = await fetch("/api/discussion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ threadId: id, body }) });
+    const r = await fetch("/api?p=discussion", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ threadId: id, body }) });
     const c = await r.json(); if (!r.ok) return setErr(c.error || "Could not publish your reply.");
     onAdd(c); setBody(""); setErr("");
   };
@@ -266,7 +278,7 @@ function ReplyBox({ id, onAdd }: { id: string; onAdd: (r: Reply) => void }) {
 }
 
 function ThreadPage({ id }: { id: string }) {
-  const { data, error } = useApi<{ thread: Thread; replies: Reply[] }>(`/api/threads/${encodeURIComponent(id)}`);
+  const { data, error } = useApi<{ thread: Thread; replies: Reply[] }>(`/api?p=threads/${encodeURIComponent(id)}`);
   const [extra, setExtra] = useState<Reply[]>([]);
   if (error) return <NotFound />;
   if (!data) return null;
@@ -275,7 +287,7 @@ function ThreadPage({ id }: { id: string }) {
 }
 
 function Heads() {
-  const { data } = useApi<Head[]>("/api/heads");
+  const { data } = useApi<Head[]>("/api?p=heads");
   if (!data) return null;
   return <main className="contributors-page"><h1>Heads.</h1><div>{data.map((h) => <article key={h.id}><div className="contributor-photo" style={{ backgroundImage: `url(${h.image_url || ""})` }} /><div><h2>{h.name}</h2><p>{h.role}</p></div></article>)}</div></main>;
 }
@@ -288,7 +300,7 @@ function ContactGate() {
   if (!isLoaded || !s) return null;
   const submit = async () => {
     if (!message.trim()) return; setStatus("sending");
-    const r = await fetch("/api/contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
+    const r = await fetch("/api?p=contact", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
     if (r.ok) { setMessage(""); setStatus("sent"); } else setStatus("error");
   };
   return <main className={`contact-page ${isSignedIn ? "" : "contact-auth-required"}`}><section><h1>{s.contact.title}</h1><p>{s.contact.text}</p></section>{isSignedIn ? <form onSubmit={(e) => { e.preventDefault(); void submit(); }}><label>Name<input value={user?.fullName || ""} readOnly /></label><label>Email<input type="email" value={user?.primaryEmailAddress?.emailAddress || ""} readOnly /></label><label>Message<textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="What would you like to talk about?" rows={5} /></label><button disabled={status === "sending"}>{status === "sending" ? "Sending" : "Send message"}</button>{status === "sent" && <p>Message sent.</p>}{status === "error" && <p>Could not send your message.</p>}</form> : <section className="contact-login"><p>Sign in to contact ThinkEconomics.</p><SignInButton mode="modal"><button className="contact-signin-link">Sign in</button></SignInButton></section>}</main>;
@@ -301,7 +313,7 @@ function Contact() {
 
 /* ───────────── router (one catch-all page serves every URL) ───────────── */
 export function Router() {
-  const [a, b] = (usePathname() || "/").split("/").filter(Boolean).map(decodeURIComponent);
+  const [a, b] = usePath().split("/").filter(Boolean).map(decodeURIComponent);
   switch (a) {
     case undefined: return <Home />;
     case "blog": return b ? <Article key={b} slug={b} /> : <Journal />;

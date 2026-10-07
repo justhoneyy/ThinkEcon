@@ -62,7 +62,7 @@ async function upload(request: Request) {
   if (!/^image\/(jpeg|png|webp|gif|avif)$/.test(file.type)) return json({ error: "Use a JPG, PNG, WebP, GIF or AVIF image." }, 415);
   if (file.size > 4 * 1024 * 1024) return json({ error: "Images must be 4 MB or smaller." }, 413);
   const r = await q<{ id: string }>("INSERT INTO media(name,mime,data) VALUES ($1,$2,$3) RETURNING id", [file.name.slice(0, 120), file.type, Buffer.from(await file.arrayBuffer())]);
-  return json({ url: `/api/media/${r[0].id}` });
+  return json({ url: `/api?p=media/${r[0].id}` });
 }
 
 export async function handle(request: Request, ctx: Ctx) {
