@@ -15,6 +15,7 @@ type EventItem = { slug: string; title: string; description: string; body: strin
 type Podcast = { id?: string; title: string; description: string; video_url: string };
 type Announcement = { slug: string; title: string; summary: string; body: string; cover: string | null };
 type Head = { id: string; name: string; role: string; bio?: string | null; image_url: string | null; linkedin?: string | null; instagram?: string | null; email?: string | null };
+type LatestItem = { kind: "post" | "podcast" | "event" | "discussion"; title: string; href: string; image: string | null; video_url?: string; created_at: string };
 type Thread = { id: string; title: string; body: string; author_name: string; created_at: string };
 type Reply = { id: string; body: string; author_name: string };
 type Settings = {
@@ -138,6 +139,19 @@ export function ArticleContent({ body }: { body: string }) {
   })}</div>;
 }
 
+/* ───────────── latest ───────────── */
+const KIND: Record<LatestItem["kind"], [string, string]> = { post: ["Journal", "photo-1456324504439-367cee3b3c32"], podcast: ["Podcast", "photo-1590602847861-f357a9332bbc"], event: ["Event", "photo-1497366754035-f200968a6e72"], discussion: ["Discussion", "photo-1528605248644-14dd04022da1"] };
+function LatestCard({ it }: { it: LatestItem }) {
+  const [label, fb] = KIND[it.kind];
+  if (it.kind === "podcast" && it.video_url) return <article className="latest-podcast-card"><iframe src={embed(it.video_url)} title={it.title} allowFullScreen loading="lazy" /><Link href={it.href}><small>{label}</small><h3>{it.title}</h3></Link></article>;
+  return <Link href={it.href}><div style={{ backgroundImage: `url(${mediaUrl(it.image, fb)})` }} /><small>{label}</small><h3>{it.title}</h3></Link>;
+}
+function LatestPage() {
+  const { data } = useApi<LatestItem[]>("/api?p=latest");
+  if (!data) return null;
+  return <main className="latest-page"><section className="latest"><Link href="/" className="back-link"><ArrowLeft size={16} /> Home</Link><div className="latest-head"><h1>All latest.</h1></div><div>{data.map((it) => <LatestCard key={it.href + it.title} it={it} />)}{!data.length && <p>Nothing has been published yet.</p>}</div></section></main>;
+}
+
 /* ───────────── home ───────────── */
 function DepartmentScroller({ items }: { items: Settings["departments"] }) {
   const [active, setActive] = useState(0);
@@ -168,9 +182,9 @@ function LeadershipContacts({ heads }: { heads: Head[] }) {
 
 function Home() {
   const s = useSettings();
-  const { data } = useApi<{ post: Post | null; podcast: Podcast | null; event: EventItem | null; heads: Head[] }>("/api?p=home");
+  const { data } = useApi<{ post: Post | null; podcast: Podcast | null; event: EventItem | null; heads: Head[]; latest?: LatestItem[] }>("/api?p=home");
   if (!s || !data) return null;
-  const { post, podcast, event, heads } = data;
+  const { heads } = data; const latest = (data.latest || []).slice(0, 2);
   const lines = s.hero.title.split("\n");
   return <main>
     <ScrollBar />
@@ -182,11 +196,7 @@ function Home() {
     <Stats heads={heads.length ? 18 : 0} posts={data.post ? 12 : 0} />
     <DepartmentScroller items={s.departments} />
     <FilmBand />
-    <section className="latest"><h2>Latest.</h2><div>
-      {post && <Link href={`/blog/${post.slug}`}><div style={{ backgroundImage: `url(${mediaUrl(post.cover, "photo-1456324504439-367cee3b3c32")})` }} /><h3>{post.title}</h3></Link>}
-      {podcast && <article className="latest-podcast-card"><iframe src={embed(podcast.video_url)} title={podcast.title} allowFullScreen /><Link href="/podcasts"><h3>{podcast.title}</h3></Link></article>}
-      {event && <Link href={`/events/${event.slug}`}><div style={{ backgroundImage: `url(${mediaUrl(event.image_url, "photo-1497366754035-f200968a6e72")})` }} /><h3>{event.title}</h3></Link>}
-    </div></section>
+    {latest.length > 0 && <section className="latest latest-home"><div className="latest-head"><h2>Latest.</h2><Link href="/latest" className="view-all">View all latest <ArrowUpRight size={16} /></Link></div><div>{latest.map((it) => <LatestCard key={it.href + it.title} it={it} />)}</div></section>}
     {heads.length > 0 && <LeadershipContacts heads={heads} />}
   </main>;
 }
@@ -326,6 +336,7 @@ export function Router() {
     case "events": return b ? <EventDetail key={b} slug={b} /> : <Events />;
     case "discussion": return b ? <ThreadPage key={b} id={b} /> : <Discussion />;
     case "announcements": return b ? <AnnouncementDetail key={b} slug={b} /> : <NotFound />;
+    case "latest": return <LatestPage />;
     case "contributors": return <Heads />;
     case "contact": return <Contact />;
     case "admin": return <AdminEntry />;

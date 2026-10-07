@@ -2,6 +2,7 @@
 
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { SignOutButton } from "@clerk/nextjs";
+import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
 import { ArticleContent } from "./site";
 import "./admin.css";
 
@@ -159,6 +160,7 @@ const TABS: [Tab, string][] = [["overview", "Overview"], ["blog", "Journal"], ["
 
 export default function AdminApp() {
   const [tab, setTab] = useState<Tab>("overview"); const [sub, setSub] = useState<"threads" | "replies" | "comments">("threads");
+  const [menu, setMenu] = useState(false);
   const [me, setMe] = useState<{ email: string; defaultAdmin: string } | null>(null); const [stats, setStats] = useState<Record<string, number>>({});
   useEffect(() => { api<{ email: string; defaultAdmin: string }>("me").then(setMe); }, []);
   useEffect(() => { api<Record<string, number>>("stats").then(setStats).catch(() => {}); }, [tab]);
@@ -179,5 +181,7 @@ export default function AdminApp() {
     case "admins": body = <Admins me={me.email} def={me.defaultAdmin} />; break;
     default: body = <section><div className="adm-head"><h1>Overview</h1></div><div className="adm-cards">{([["blog", "Journal posts", "blog"], ["podcasts", "Podcasts", "podcasts"], ["events", "Events", "events"], ["announcements", "Discussion posts", "announcements"], ["heads", "Heads", "heads"], ["unread", "Unread messages", "messages"], ["comments", "Comments", "community"]] as [string, string, Tab][]).map(([k, label, t]) => <button key={k} className="adm-card" onClick={() => setTab(t)}><b>{stats[k] ?? "–"}</b><span>{label}</span></button>)}</div><p style={{ marginTop: "1.5rem" }}><a href="/" target="_blank">View live site ↗</a></p></section>;
   }
-  return <div className="adm"><aside className="adm-side"><div className="adm-brand"><small>Admin</small>ThinkEconomics</div>{TABS.map(([id, label]) => <button key={id} className={tab === id ? "on" : ""} onClick={() => setTab(id)}>{label}{id === "messages" && stats.unread ? <span className="adm-badge">{stats.unread}</span> : null}</button>)}<div className="adm-me">{me.email}<br /><SignOutButton redirectUrl="/admin"><button style={{ padding: ".3rem 0", color: "#fff", textDecoration: "underline" }}>Sign out</button></SignOutButton></div></aside><div className="adm-main">{body}</div></div>;
+  const pick = (id: Tab) => { setTab(id); setMenu(false); window.scrollTo({ top: 0 }); };
+  const cur = TABS.find(([id]) => id === tab)?.[1] || "Overview";
+  return <div className="adm"><aside className={`adm-side ${menu ? "open" : ""}`}><div className="adm-top"><div className="adm-brand"><small>Admin</small>ThinkEconomics</div><span className="adm-cur">{cur}</span><button className="adm-burger" aria-label={menu ? "Close menu" : "Open menu"} aria-expanded={menu} onClick={() => setMenu(!menu)}>{menu ? <CloseIcon size={22} /> : <MenuIcon size={22} />}</button></div><nav className="adm-tabs">{TABS.map(([id, label]) => <button key={id} className={tab === id ? "on" : ""} onClick={() => pick(id as Tab)}>{label}{id === "messages" && stats.unread ? <span className="adm-badge">{stats.unread}</span> : null}</button>)}</nav><div className="adm-me">{me.email}<br /><SignOutButton redirectUrl="/admin"><button style={{ padding: ".3rem 0", color: "#fff", textDecoration: "underline" }}>Sign out</button></SignOutButton></div></aside>{menu && <div className="adm-scrim" onClick={() => setMenu(false)} />}<div className="adm-main">{body}</div></div>;
 }

@@ -7,7 +7,7 @@ type Ctx = { params: Promise<{ path: string[] }> };
 const POST_COLS = "slug,title,summary,body,cover,created_at";
 const EVENT_COLS = "slug,title,description,body,event_date::text AS event_date,location,image_url,application_url,meeting_url";
 
-const CACHEABLE = new Set(["settings", "home", "posts", "podcasts", "events", "announcements", "heads", "threads", "comments"]);
+const CACHEABLE = new Set(["settings", "home", "latest", "posts", "podcasts", "events", "announcements", "heads", "threads", "comments"]);
 export async function pubGet(req: Request, ctx: Ctx) {
   const path = (await ctx.params).path;
   if (path[0] === "health") {
@@ -20,6 +20,22 @@ export async function pubGet(req: Request, ctx: Ctx) {
   return cached(path.join("/"), () => pubGetRaw(req, ctx));
 }
 
+type LatestItem = { kind: "post" | "podcast" | "event" | "discussion"; title: string; href: string; image: string | null; video_url?: string; created_at: string };
+async function latestItems(): Promise<LatestItem[]> {
+  const [p, pc, e, a] = await Promise.all([
+    q<{ slug: string; title: string; cover: string | null; created_at: string }>("SELECT slug,title,cover,created_at FROM blog_posts WHERE published"),
+    q<{ title: string; video_url: string; thumbnail_url: string | null; created_at: string }>("SELECT title,video_url,thumbnail_url,created_at FROM podcasts WHERE published"),
+    q<{ slug: string; title: string; image_url: string | null; created_at: string }>("SELECT slug,title,image_url,created_at FROM events WHERE published"),
+    q<{ slug: string; title: string; cover: string | null; created_at: string }>("SELECT slug,title,cover,created_at FROM announcements WHERE published"),
+  ]);
+  return [
+    ...p.map((x): LatestItem => ({ kind: "post", title: x.title, href: `/blog/${x.slug}`, image: x.cover, created_at: x.created_at })),
+    ...pc.map((x): LatestItem => ({ kind: "podcast", title: x.title, href: "/podcasts", image: x.thumbnail_url, video_url: x.video_url, created_at: x.created_at })),
+    ...e.map((x): LatestItem => ({ kind: "event", title: x.title, href: `/events/${x.slug}`, image: x.image_url, created_at: x.created_at })),
+    ...a.map((x): LatestItem => ({ kind: "discussion", title: x.title, href: `/announcements/${x.slug}`, image: x.cover, created_at: x.created_at })),
+  ].sort((m, n) => +new Date(n.created_at) - +new Date(m.created_at));
+}
+
 async function pubGetRaw(_: Request, ctx: Ctx) {
   const [a, b] = (await ctx.params).path;
   try {
@@ -29,6 +45,7 @@ async function pubGetRaw(_: Request, ctx: Ctx) {
         const rows = await q<{ key: string; value: unknown }>("SELECT key,value FROM settings WHERE key<>'seeded'");
         return json(Object.fromEntries(rows.map((r) => [r.key, r.value])));
       }
+      case "latest": return json(await latestItems());
       case "home": {
         const [posts, podcasts, events, heads] = await Promise.all([
           q(`SELECT ${POST_COLS} FROM blog_posts WHERE published ORDER BY created_at DESC LIMIT 1`),
@@ -36,7 +53,7 @@ async function pubGetRaw(_: Request, ctx: Ctx) {
           q(`SELECT ${EVENT_COLS} FROM events WHERE published ORDER BY event_date ASC NULLS LAST, created_at DESC LIMIT 1`),
           q("SELECT id,name,role,bio,image_url,linkedin,instagram,email FROM heads WHERE published AND featured ORDER BY sort_order,created_at"),
         ]);
-        return json({ post: posts[0] || null, podcast: podcasts[0] || null, event: events[0] || null, heads });
+        return json({ post: posts[0] || null, podcast: podcasts[0] || null, event: events[0] || null, heads, latest: (await latestItems()).slice(0, 2) });
       }
       case "posts":
         if (b) { const r = await q(`SELECT ${POST_COLS} FROM blog_posts WHERE published AND slug=$1`, [b]); return r[0] ? json(r[0]) : json({ error: "Not found" }, 404); }

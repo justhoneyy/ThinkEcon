@@ -1,45 +1,64 @@
-import Redis from "ioredis";
-
-// Optional cache: set REDIS_URL (e.g. redis://default:pass@host:6379). Without it everything still works, just uncached.
-const g = globalThis as unknown as { __redis?: Redis | null };
+// Optional cache. Supports Upstash REST (UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, also KV_REST_API_URL/TOKEN)
+// and classic Redis (REDIS_URL via ioredis). With neither set, everything works uncached.
 const TTL = Number(process.env.REDIS_TTL || 300);
+const REST_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
-function client() {
-  if (g.__redis !== undefined) return g.__redis;
-  const url = process.env.REDIS_URL;
-  if (!url) return (g.__redis = null);
-  const r = new Redis(url, { maxRetriesPerRequest: 1, connectTimeout: 2000, enableOfflineQueue: false, lazyConnect: false, tls: url.startsWith("rediss://") ? {} : undefined });
-  r.on("error", () => {}); // never crash the site because the cache is down
-  return (g.__redis = r);
+type Cmd = (string | number)[];
+type Backend = { run: (cmd: Cmd) => Promise<unknown> } | null;
+const g = globalThis as unknown as { __cache?: Backend };
+
+const within = <T,>(p: Promise<T>, ms = 1200) => Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error("cache timeout")), ms))]);
+
+function backend(): Backend {
+  if (g.__cache !== undefined) return g.__cache;
+  if (REST_URL && REST_TOKEN) {
+    g.__cache = { run: async (cmd) => {
+      const r = await fetch(REST_URL, { method: "POST", headers: { Authorization: `Bearer ${REST_TOKEN}`, "Content-Type": "application/json" }, body: JSON.stringify(cmd), cache: "no-store" });
+      const d = (await r.json()) as { result?: unknown; error?: string };
+      if (!r.ok || d.error) throw new Error(d.error || `HTTP ${r.status}`);
+      return d.result;
+    } };
+  } else if (process.env.REDIS_URL) {
+    const url = process.env.REDIS_URL;
+    let client: import("ioredis").default | null = null;
+    g.__cache = { run: async (cmd) => {
+      if (!client) {
+        const { default: Redis } = await import("ioredis");
+        client = new Redis(url, { maxRetriesPerRequest: 1, connectTimeout: 2000, tls: url.startsWith("rediss://") ? {} : undefined });
+        client.on("error", () => {});
+      }
+      return client.call(String(cmd[0]), ...cmd.slice(1).map(String));
+    } };
+  } else g.__cache = null;
+  return g.__cache;
 }
 
-/** Version number baked into every key; bumping it invalidates the whole cache at once. */
-async function version(r: Redis) { return (await r.get("te:v")) || "0"; }
-
-const within = <T,>(p: Promise<T>, ms = 800) => Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error("redis timeout")), ms))]);
+const call = (b: NonNullable<Backend>, cmd: Cmd) => within(b.run(cmd));
 
 export async function cached(key: string, produce: () => Promise<Response>): Promise<Response> {
-  let r: Redis | null = null;
-  try { r = client(); } catch (e) { console.error("[redis] init failed:", (e as Error).message); }
-  if (!r) return produce();
+  const b = backend();
+  if (!b) return produce();
   let k = "";
   try {
-    k = `te:${await within(version(r))}:${key}`;
-    const hit = await within(r.get(k));
-    if (hit) return new Response(hit, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Cache": "HIT" } });
-  } catch (e) { console.error("[redis] read failed, serving uncached:", (e as Error).message); return produce(); }
+    const v = (await call(b, ["GET", "te:v"])) || "0";
+    k = `te:${v}:${key}`;
+    const hit = await call(b, ["GET", k]);
+    if (typeof hit === "string" && hit) return new Response(hit, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Cache": "HIT" } });
+  } catch (e) { console.error("[cache] read failed, serving uncached:", (e as Error).message); return produce(); }
   const res = await produce();
-  if (res.status === 200 && k) { try { await within(r.set(k, await res.clone().text(), "EX", TTL)); } catch {} }
+  if (res.status === 200 && k) { try { await call(b, ["SET", k, await res.clone().text(), "EX", TTL]); } catch (e) { console.error("[cache] write failed:", (e as Error).message); } }
   return res;
 }
 
 export async function invalidate() {
-  const r = client();
-  if (r) try { await within(r.incr("te:v")); } catch {}
+  const b = backend();
+  if (b) try { await call(b, ["INCR", "te:v"]); } catch (e) { console.error("[cache] invalidate failed:", (e as Error).message); }
 }
 
 export async function redisStatus(): Promise<string> {
-  if (!process.env.REDIS_URL) return "off (REDIS_URL not set)";
-  try { const r = client(); if (!r) return "off"; await within(r.ping(), 1500); return "ok"; }
+  const b = backend();
+  if (!b) return "off (set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN)";
+  try { await call(b, ["PING"]); return REST_URL ? "ok (upstash)" : "ok"; }
   catch (e) { return `error: ${(e as Error).message.slice(0, 80)}`; }
 }
