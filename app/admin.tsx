@@ -112,6 +112,7 @@ function Departments() {
 }
 function SiteContent() {
   return <section><div className="adm-head"><h1>Site content</h1></div>
+    <SettingSection id="meta" title="Logo & link preview (Google / WhatsApp / social)" fields={[{ k: "siteName", label: "Site name" }, { k: "logo", label: "Logo (also the browser tab icon)", type: "image", hint: "Square image, PNG or SVG" }, { k: "title", label: "Preview title" }, { k: "description", label: "Preview description", type: "textarea", hint: "Keep it under 160 characters" }, { k: "ogImage", label: "Preview image", type: "image", hint: "1200×630 works best" }]} />
     <SettingSection id="hero" title="Home hero" fields={[{ k: "kicker", label: "Small heading" }, { k: "title", label: "Big title", type: "textarea", hint: "Press Enter for a new line" }, { k: "text", label: "Intro text", type: "textarea" }, { k: "cta", label: "Button text" }]} />
     <SettingSection id="ribbon" flat title="Scrolling ribbon" fields={[{ k: "value", label: "Ribbon text" }]} />
     <SettingSection id="about" flat title="About statement" fields={[{ k: "value", label: "About text (shown under the ribbon, linked from the 'About' menu item)", type: "textarea" }]} />

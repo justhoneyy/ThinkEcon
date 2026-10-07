@@ -23,6 +23,7 @@ type Settings = {
   ribbon: string; about: string;
   departments: { title: string; href: string; image: string; caption: string }[];
   contact: { title: string; text: string };
+  meta?: { siteName: string; title: string; description: string; ogImage: string; logo: string };
   footer: { text: string; instagram: string; linkedin: string; copyright: string };
 };
 
@@ -107,7 +108,7 @@ export function Shell({ children }: { children: ReactNode }) {
   if (bare) return <>{children}</>;
   const f = settings?.footer;
   return <SettingsCtx.Provider value={settings}>
-    <header className="topbar"><Link className="identity" href="/">ThinkEconomics</Link><nav className="desktop-nav">{links.map(([l, h]) => <Link key={h} href={h}>{l}</Link>)}</nav><button className="menu-toggle" onClick={() => setOpen(!open)} aria-label="Open navigation" aria-expanded={open}>{open ? <X size={24} /> : <Menu size={24} />}</button><AuthControls /></header>
+    <header className="topbar"><Link className="identity" href="/"><img src={mediaUrl(settings?.meta?.logo || "/logo.svg", "")} alt="" width={34} height={34} /><span>{settings?.meta?.siteName || "ThinkEconomics"}</span></Link><nav className="desktop-nav">{links.map(([l, h]) => <Link key={h} href={h}>{l}</Link>)}</nav><button className="menu-toggle" onClick={() => setOpen(!open)} aria-label="Open navigation" aria-expanded={open}>{open ? <X size={24} /> : <Menu size={24} />}</button><AuthControls /></header>
     <aside className={`menu-drawer ${open ? "is-open" : ""}`}><div>{links.map(([l, h], i) => <Link key={h} href={h} onClick={() => setOpen(false)} style={{ "--i": i } as React.CSSProperties}>{l}</Link>)}</div><AuthControls /></aside>
     {settingsError && <p style={{ margin: "2rem auto", padding: "1rem", maxWidth: 560, textAlign: "center", background: "#fae4df", color: "#7c2118", borderRadius: 8 }}>The site could not load its content. Open /api?p=health to see whether the database or Redis is failing.</p>}
     {children}

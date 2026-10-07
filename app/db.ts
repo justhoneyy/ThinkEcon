@@ -59,6 +59,7 @@ const LEAD_LINKS: Record<string, [string, string, string]> = {
 };
 
 export const DEFAULT_SETTINGS = {
+  meta: { siteName: "ThinkEconomics", title: "ThinkEconomics — Student-led economics", description: "A student-led community for economics, policy, business, and current affairs.", ogImage: "/og-default.png", logo: "/logo.svg" },
   hero: { kicker: "Student-led economics", title: "Young minds.\nPublic ideas.", text: "ThinkEconomics is where students research, publish, discuss, and build a sharper view of the world.", cta: "Join ThinkEconomics" },
   ribbon: "Research • Editorial • Podcasts • Public Policy • Design • Outreach •",
   about: "Economics is not only theory. It is how people make choices, build systems, and shape everyday life.",
