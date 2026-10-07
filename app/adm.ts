@@ -7,7 +7,7 @@ type T = "s" | "n" | "b" | "i" | "d"; // required string, nullable string, boole
 const RES: Record<string, { table: string; cols: Record<string, T>; slug?: boolean; order: string; select?: string; create?: boolean }> = {
   blog: { table: "blog_posts", slug: true, order: "created_at DESC", cols: { title: "s", summary: "s", body: "s", cover: "n", published: "b" } },
   podcasts: { table: "podcasts", order: "created_at DESC", cols: { title: "s", description: "s", video_url: "s", thumbnail_url: "n", published: "b" } },
-  events: { table: "events", slug: true, order: "event_date DESC NULLS LAST, created_at DESC", select: "*, event_date::text AS event_date", cols: { title: "s", description: "s", body: "n", event_date: "d", location: "n", image_url: "n", application_url: "n", meeting_url: "n", published: "b" } },
+  events: { table: "events", slug: true, order: "events.event_date DESC NULLS LAST, events.created_at DESC", select: "*, event_date::text AS event_date", cols: { title: "s", description: "s", body: "n", event_date: "d", location: "n", image_url: "n", application_url: "n", meeting_url: "n", published: "b" } },
   announcements: { table: "announcements", slug: true, order: "created_at DESC", cols: { title: "s", summary: "s", body: "s", cover: "n", published: "b" } },
   heads: { table: "heads", order: "sort_order, created_at", cols: { name: "s", role: "s", bio: "n", image_url: "n", linkedin: "n", instagram: "n", email: "n", featured: "b", sort_order: "i", published: "b" } },
   threads: { table: "discussion_threads", order: "created_at DESC", create: false, cols: { title: "s", body: "s" } },

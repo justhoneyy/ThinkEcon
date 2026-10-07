@@ -83,7 +83,7 @@
   .adm .adm-brand{flex:0 0 auto;border:0;margin:0;padding:0}
   .adm .adm-cur{display:block;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;color:#b8efae;font-size:.82rem;font-weight:700}
   .adm .adm-side .adm-burger{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff}
-  .adm .adm-tabs,.adm .adm-me{display:none}
+  .adm .adm-side .adm-tabs,.adm .adm-side .adm-me{display:none}
   .adm .adm-side.open .adm-tabs{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;padding:.25rem .9rem .75rem;max-height:calc(100svh - 150px);overflow-y:auto}
   .adm .adm-side.open .adm-tabs button{width:100%;justify-content:flex-start;border-radius:10px;min-height:46px;background:rgba(255,255,255,.08)}
   .adm .adm-side.open .adm-tabs button.on{background:#b8efae;color:var(--ink)}
