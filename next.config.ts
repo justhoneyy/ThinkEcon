@@ -5,6 +5,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   serverExternalPackages: ["pg"],
   images: { remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com", pathname: "/photo-**" }] },
+  // One page (app/page.tsx) serves every URL (/blog, /events/x, /admin ...). Real files (_next, /public, /api) win first.
+  async rewrites() {
+    return { beforeFiles: [], afterFiles: [], fallback: [{ source: "/:path*", destination: "/" }] };
+  },
 };
 
 export default nextConfig;

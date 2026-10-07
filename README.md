@@ -41,9 +41,9 @@ Browsers must download the code to run it, so it can never be made truly invisib
 
 ## Project layout
 ```
-app/layout.tsx            root layout
-app/[[...slug]]/page.tsx  one page that serves every URL (router lives in site.tsx)
-app/api/[...path]/route.ts one API route (public, admin, media)
+app/layout.tsx     root layout
+app/page.tsx       the only page – serves every URL (router is in site.tsx, rewrite in next.config.ts)
+app/api/route.ts   the only API route, called as /api?p=<name>
 app/site.tsx  admin.tsx  admin-entry.tsx  pub.ts  adm.ts  db.ts  auth.ts  *.css
-proxy.ts                  Clerk middleware
+proxy.ts           Clerk middleware
 ```
