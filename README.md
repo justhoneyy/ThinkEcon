@@ -9,6 +9,7 @@ Next.js 16 + Clerk (Google login) + PostgreSQL. Everything on the site is edited
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | yes | Clerk → API Keys (must exist at **build** time) |
 | `CLERK_SECRET_KEY` | yes | Clerk → API Keys |
 | `DEFAULT_ADMIN_EMAIL` | no | Defaults to `abhinav.hadaa@gmail.com` |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | no | Upstash cache (preferred, works on Vercel). Or use `REDIS_URL` |
 | `REDIS_URL` | no | `redis://` or `rediss://` URL. Public API responses are cached; any admin edit or new comment clears the cache |
 | `REDIS_TTL` | no | Cache seconds (default 300) |
 | `DATABASE_SSL` | no | Set `false` only if your DB refuses SSL |
