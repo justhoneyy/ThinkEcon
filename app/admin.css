@@ -23,3 +23,55 @@
 .adm-sub{display:flex;gap:.4rem;margin-bottom:1rem;flex-wrap:wrap}.adm-sub button{border:1px solid var(--line);background:#fff;padding:.45rem .8rem;border-radius:99px;cursor:pointer;font:700 .8rem Arial}.adm-sub button.on{background:var(--g);color:#fff;border-color:var(--g)}
 .adm-preview{border:1px dashed #b9c2b6;border-radius:6px;padding:1rem;background:var(--bg)}.adm-sec{margin-bottom:1.6rem}.adm-sec>h2{font:700 1.2rem "Times New Roman",serif;margin-bottom:.6rem}
 @media(max-width:800px){.adm{grid-template-columns:1fr}.adm-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;padding:.6rem}.adm-brand{width:100%;padding-bottom:.3rem}.adm-side .adm-me{display:none}.adm-two{grid-template-columns:1fr}}
+
+/* ───── Admin: phone & tablet layout ───── */
+.adm{max-width:100vw;overflow-x:clip}
+.adm-main{min-width:0}
+@media(max-width:800px){
+  .adm{display:block;min-height:100svh;font-size:15px}
+  /* tab bar: one swipeable row, pinned to top */
+  .adm .adm-side{position:sticky;top:0;z-index:30;height:auto;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:.4rem;overflow-x:auto;overflow-y:hidden;padding:.6rem .75rem;-webkit-overflow-scrolling:touch;scrollbar-width:none;box-shadow:0 4px 14px rgba(0,0,0,.18);padding-top:max(.6rem,env(safe-area-inset-top))}
+  .adm .adm-side::-webkit-scrollbar{display:none}
+  .adm .adm-brand{width:auto;flex:0 0 auto;padding:0 .75rem 0 .25rem;margin-right:.25rem;border-right:1px solid rgba(255,255,255,.2);font-size:1.05rem;line-height:1.1}
+  .adm .adm-brand small{font-size:.58rem}
+  .adm .adm-side button{flex:0 0 auto;min-height:40px;padding:.5rem .9rem;border-radius:99px;white-space:nowrap;background:rgba(255,255,255,.08)}
+  .adm .adm-side button.on{background:#b8efae}
+  .adm .adm-side .adm-me{display:block;flex:0 0 auto;margin:0 0 0 .25rem;padding:0;font-size:0;line-height:0}
+  .adm .adm-side .adm-me br{display:none}
+  .adm .adm-side .adm-me button{font-size:.82rem;line-height:1.2;padding:.5rem .9rem!important;color:#fff;text-decoration:none!important;border:1px solid rgba(255,255,255,.4);background:transparent}
+  .adm .adm-main{padding:1.1rem 1rem 3rem;max-width:100%}
+  .adm .adm-head{align-items:center;margin-bottom:1rem}
+  .adm .adm-head h1{font-size:1.6rem;line-height:1.1}
+  .adm .adm-head .adm-btn{min-height:44px}
+  /* stats cards: two per row */
+  .adm .adm-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem}
+  .adm .adm-card{padding:.9rem}.adm .adm-card b{font-size:1.7rem}
+  /* list rows: title on top, actions below */
+  .adm .adm-row{display:grid;grid-template-columns:1fr auto;grid-template-areas:"t pill" "a a";gap:.6rem .5rem;align-items:center;padding:.85rem}
+  .adm .adm-row>div:first-child{grid-area:t}
+  .adm .adm-row .adm-pill{grid-area:pill;margin:0;justify-self:end}
+  .adm .adm-row .adm-btn{min-height:40px;width:100%}
+  .adm .adm-row>.adm-btn:nth-of-type(n){grid-row:2}
+  .adm .adm-row>.adm-btn{grid-area:auto}
+  .adm .adm-row strong{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .adm .adm-row small{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  /* forms */
+  .adm .adm-form{padding:1rem;border-radius:12px}
+  .adm .adm-form input[type=text],.adm .adm-form input[type=url],.adm .adm-form input[type=date],.adm .adm-form input[type=number],.adm .adm-form input[type=email],.adm .adm-form textarea{font-size:16px;min-height:46px} /* 16px stops iOS zoom-on-focus */
+  .adm .adm-form textarea{min-height:8rem}.adm .adm-form textarea.tall{min-height:60svh;font-size:14px}
+  .adm .adm-img{display:grid;grid-template-columns:56px 1fr;gap:.5rem}
+  .adm .adm-img input[type=text]{min-width:0;grid-column:2}
+  .adm .adm-img img{grid-column:1;grid-row:1;width:56px;height:56px}
+  .adm .adm-img .adm-btn{grid-column:1/-1;width:100%;min-height:42px}
+  .adm .adm-actions{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+  .adm .adm-actions .adm-btn{width:100%;min-height:44px}
+  .adm .adm-actions small{grid-column:1/-1}
+  .adm .adm-form>div:last-child:has(>.adm-btn:only-child) .adm-btn{width:100%;min-height:46px}
+  .adm .adm-form .chk{min-height:44px}.adm .adm-form .chk input{width:22px;height:22px}
+  .adm .adm-sub{flex-wrap:nowrap;overflow-x:auto;margin-inline:-1rem;padding:0 1rem .25rem;scrollbar-width:none}
+  .adm .adm-sub button{flex:0 0 auto;min-height:40px}
+  .adm .adm-preview{overflow-x:auto}
+  .adm .adm-note{position:sticky;top:64px;z-index:20}
+  .adm table{display:block;overflow-x:auto}
+}
+@media(min-width:801px) and (max-width:1100px){.adm{grid-template-columns:200px 1fr}.adm .adm-main{padding:1.5rem}}

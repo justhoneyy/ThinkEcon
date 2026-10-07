@@ -16,21 +16,24 @@ function client() {
 /** Version number baked into every key; bumping it invalidates the whole cache at once. */
 async function version(r: Redis) { return (await r.get("te:v")) || "0"; }
 
+const within = <T,>(p: Promise<T>, ms = 800) => Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error("redis timeout")), ms))]);
+
 export async function cached(key: string, produce: () => Promise<Response>): Promise<Response> {
-  const r = client();
+  let r: Redis | null = null;
+  try { r = client(); } catch (e) { console.error("[redis] init failed:", (e as Error).message); }
   if (!r) return produce();
   let k = "";
   try {
-    k = `te:${await version(r)}:${key}`;
-    const hit = await r.get(k);
+    k = `te:${await within(version(r))}:${key}`;
+    const hit = await within(r.get(k));
     if (hit) return new Response(hit, { headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Cache": "HIT" } });
-  } catch { return produce(); }
+  } catch (e) { console.error("[redis] read failed, serving uncached:", (e as Error).message); return produce(); }
   const res = await produce();
-  if (res.status === 200 && k) { try { await r.set(k, await res.clone().text(), "EX", TTL); } catch {} }
+  if (res.status === 200 && k) { try { await within(r.set(k, await res.clone().text(), "EX", TTL)); } catch {} }
   return res;
 }
 
 export async function invalidate() {
   const r = client();
-  if (r) try { await r.incr("te:v"); } catch {}
+  if (r) try { await within(r.incr("te:v")); } catch {}
 }

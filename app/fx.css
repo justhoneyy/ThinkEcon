@@ -48,7 +48,6 @@ img,video,iframe{max-width:100%}
 .latest a,.event-card,.contributors-page article,.leadership-grid article{overflow:hidden;transition:transform .35s,box-shadow .35s}
 .latest a:hover,.event-card:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(16,36,24,.14)}
 .latest a:hover>div,.event-card:hover .event-image,.contributors-page article:hover .contributor-photo,.leadership-grid article:hover .leader-photo{transform:scale(1.06)}
-.contributor-photo{filter:grayscale(.55);transition:filter .5s,transform .7s}.contributors-page article:hover .contributor-photo{filter:none}
 .leadership-grid nav a{transition:background .2s,color .2s,transform .2s}.leadership-grid nav a:hover{background:var(--green);color:#fff;transform:translateY(-3px)}
 .podcast-grid article{transition:transform .35s}.podcast-grid article:hover{transform:translateY(-4px)}
 .podcast-grid iframe,.latest-podcast-card iframe{border-radius:6px;box-shadow:0 14px 30px rgba(0,0,0,.12)}
@@ -80,3 +79,16 @@ img,video,iframe{max-width:100%}
 @media(max-width:380px){.stats strong{font-size:2.4rem}.topbar{padding:0 1rem}}
 @media(hover:none){.latest a:hover,.event-card:hover,.podcast-grid article:hover{transform:none;box-shadow:none}}
 @media(prefers-reduced-motion:reduce){.hero:before,.hero .hero-media,.ribbon div{animation:none!important}.scroll-reveal{transition:none;opacity:1;filter:none;transform:none}}
+
+/* Rounded corners on every photo/card, original colours kept */
+:root{--r:18px}
+.contributors-page>div,.events-list,.latest>div,.announcement-grid,.journal-grid,.leadership-grid,.people-grid .people-cards{background:transparent;gap:clamp(.75rem,2vw,1.25rem)}
+.contributors-page article,.leadership-grid article,.latest a,.latest-podcast-card,.event-card,.journal-grid>a,.journal-feature,.person-card,.person-stage,.announcement-grid>a{border-radius:var(--r);overflow:hidden}
+.contributors-page article,.leadership-grid article,.latest a,.latest-podcast-card,.event-card,.journal-grid>a{border:1px solid var(--line)}
+.contributor-photo,.leader-photo,.event-image,.journal-card-image,.discussion-feature a>div,.article-image,.interactive-model{border-radius:var(--r)}
+.contributor-photo{border-radius:var(--r) var(--r) 0 0}.leader-photo{border-radius:var(--r) 0 0 var(--r)}
+.latest a>div,.latest-podcast-card iframe,.event-image,.journal-card-image{border-radius:0}
+.latest-podcast-card iframe{box-shadow:none}
+.journal-article-page .article-cover{border-radius:var(--r)}
+.department-card:after,.department-scroll-image{border-radius:0}
+@media(max-width:760px){:root{--r:14px}.leader-photo{border-radius:var(--r) var(--r) 0 0}.journal-article-page .article-cover{margin-inline:0}}

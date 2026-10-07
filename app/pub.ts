@@ -56,7 +56,7 @@ async function pubGetRaw(_: Request, ctx: Ctx) {
         return json({ signedIn: Boolean(u), admin: Boolean(u?.verified && await isAdminEmail(u.email)) });
       }
     }
-  } catch { return json({ error: "Server error" }, 500); }
+  } catch (e) { console.error("[api]", a, e); return json({ error: "Server error" }, 500); }
   return json({ error: "Not found" }, 404);
 }
 
