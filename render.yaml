@@ -23,3 +23,5 @@ services:
         sync: false
       - key: DEFAULT_ADMIN_EMAIL
         value: abhinav.hadaa@gmail.com
+      - key: REDIS_URL
+        sync: false

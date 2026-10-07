@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.18",
+    "ioredis": "^5.4.1",
     "lucide-react": "^1.24.0",
     "next": "^16.2.10",
     "pg": "^8.13.1",
