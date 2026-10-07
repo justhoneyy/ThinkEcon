@@ -11,6 +11,7 @@ Next.js 16 + Clerk (Google login) + PostgreSQL. Everything on the site is edited
 | `DEFAULT_ADMIN_EMAIL` | no | Defaults to `abhinav.hadaa@gmail.com` |
 | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | no | Upstash cache (preferred, works on Vercel). Or use `REDIS_URL` |
 | `REDIS_URL` | no | `redis://` or `rediss://` URL. Public API responses are cached; any admin edit or new comment clears the cache |
+| `NEXT_PUBLIC_SITE_URL` | recommended | Your public URL (e.g. `https://thinkecon.vercel.app`) so link-preview images get absolute URLs |
 | `REDIS_TTL` | no | Cache seconds (default 300) |
 | `DATABASE_SSL` | no | Set `false` only if your DB refuses SSL |
 
