@@ -1,5 +1,0 @@
-.project-sticky{top:50vh;transform:translateY(-50%);padding-top:0}
-.project-sticky h2{max-width:100%;overflow-wrap:anywhere}
-.project-images article>div{transition:filter .5s ease,transform .6s ease}
-.project-images article:hover>div{filter:brightness(.9);transform:scale(1.015)}
-@media(max-width:760px){.project-sticky{top:50vh;transform:translateY(-50%);background:transparent}.project-sticky p{max-width:16rem}.project-images{margin-top:-8rem}.project-images article{min-height:70vh}.home-projects .project-images{margin-top:-7rem}}

@@ -1,1 +1,0 @@
-.footer nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:.9rem}.footer nav a{display:inline-flex;align-items:center;gap:.4rem;white-space:nowrap;color:var(--green);font-weight:700}.footer nav a:hover{opacity:.65}@media(max-width:760px){.footer nav{justify-content:flex-start}.footer nav a span{font-size:.82rem}}

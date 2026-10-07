@@ -1,5 +1,0 @@
-/* Keep the homepage message stable; the morphing interaction belongs to Departments. */
-.hero .hero-media{background:url("https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=2400&q=85") center/cover;animation:media-in 1.4s ease-out both;overflow:visible}
-.hero-copy-lockup{position:relative;z-index:1;margin-top:clamp(1rem,4vh,3rem);width:min(100%,72rem);overflow:visible}
-.hero-copy-lockup h1{position:static;max-width:10ch;padding:.06em 0 .12em;font-size:clamp(4.3rem,12vw,11rem);line-height:.88;overflow:visible}
-@media(max-width:760px){.hero-copy-lockup h1{font-size:clamp(3.9rem,17vw,6rem);line-height:.9}}
