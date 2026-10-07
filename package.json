@@ -1,0 +1,28 @@
+{
+  "name": "thinkeconomics",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.5.18",
+    "lucide-react": "^1.24.0",
+    "next": "^16.2.10",
+    "pg": "^8.13.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-markdown": "10.1.0",
+    "remark-gfm": "4.0.1",
+    "unpdf": "1.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@types/pg": "^8.11.10",
+    "@types/react": "^19.2.17",
+    "typescript": "^5.9.3"
+  },
+  "engines": { "node": ">=20.9" }
+}

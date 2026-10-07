@@ -1,0 +1,25 @@
+# Render Blueprint: New + → Blueprint → pick this repo. Creates the web service AND a PostgreSQL database.
+databases:
+  - name: thinkeconomics-db
+    plan: free            # free DBs expire after 30 days on Render – switch to a paid plan for production
+services:
+  - type: web
+    name: thinkeconomics
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DATABASE_URL
+        fromDatabase:
+          name: thinkeconomics-db
+          property: connectionString
+      - key: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_SECRET_KEY
+        sync: false
+      - key: DEFAULT_ADMIN_EMAIL
+        value: abhinav.hadaa@gmail.com
