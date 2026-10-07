@@ -1,12 +1,20 @@
 import { q } from "./db";
 import { getUser, isAdminEmail, json } from "./auth";
+import { cached, invalidate } from "./redis";
 
 type Ctx = { params: Promise<{ path: string[] }> };
 
 const POST_COLS = "slug,title,summary,body,cover,created_at";
 const EVENT_COLS = "slug,title,description,body,event_date::text AS event_date,location,image_url,application_url,meeting_url";
 
-export async function pubGet(_: Request, ctx: Ctx) {
+const CACHEABLE = new Set(["settings", "home", "posts", "podcasts", "events", "announcements", "heads", "threads", "comments"]);
+export async function pubGet(req: Request, ctx: Ctx) {
+  const path = (await ctx.params).path;
+  if (!CACHEABLE.has(path[0])) return pubGetRaw(req, ctx);
+  return cached(path.join("/"), () => pubGetRaw(req, ctx));
+}
+
+async function pubGetRaw(_: Request, ctx: Ctx) {
   const [a, b] = (await ctx.params).path;
   try {
     switch (a) {
@@ -53,6 +61,12 @@ export async function pubGet(_: Request, ctx: Ctx) {
 }
 
 export async function pubPost(request: Request, ctx: Ctx) {
+  const res = await pubPostRaw(request, ctx);
+  if (res.ok) await invalidate();
+  return res;
+}
+
+async function pubPostRaw(request: Request, ctx: Ctx) {
   const [a] = (await ctx.params).path;
   const user = await getUser();
   if (!user) return json({ error: "Sign in to continue." }, 401);

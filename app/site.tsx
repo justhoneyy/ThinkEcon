@@ -7,6 +7,7 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { ArrowLeft, ArrowUpRight, AtSign, CircleUserRound, Clock3, Link2, Mail, Menu, UsersRound, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { FilmBand, ScrollBar, Stats } from "./fx";
 
 /* ───────────── types & helpers ───────────── */
 type Post = { slug: string; title: string; summary: string; body: string; cover: string | null; created_at: string };
@@ -171,12 +172,15 @@ function Home() {
   const { post, podcast, event, heads } = data;
   const lines = s.hero.title.split("\n");
   return <main>
+    <ScrollBar />
     <section className="hero"><div className="hero-media" /><div className="hero-shade" />
       <div className="hero-copy-lockup"><p className="hero-kicker">{s.hero.kicker}</p><h1>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</h1></div>
       <div className="hero-bottom"><p>{s.hero.text}</p><Link href="/contact" className="cta">{s.hero.cta}</Link></div></section>
     <section className="ribbon"><div>{Array(3).fill(`${s.ribbon} `).join(" ")}</div></section>
     <section className="statement" id="about"><h2>{s.about}</h2></section>
+    <Stats heads={heads.length ? 18 : 0} posts={data.post ? 12 : 0} />
     <DepartmentScroller items={s.departments} />
+    <FilmBand />
     <section className="latest"><h2>Latest.</h2><div>
       {post && <Link href={`/blog/${post.slug}`}><div style={{ backgroundImage: `url(${mediaUrl(post.cover, "photo-1456324504439-367cee3b3c32")})` }} /><h3>{post.title}</h3></Link>}
       {podcast && <article className="latest-podcast-card"><iframe src={embed(podcast.video_url)} title={podcast.title} allowFullScreen /><Link href="/podcasts"><h3>{podcast.title}</h3></Link></article>}
