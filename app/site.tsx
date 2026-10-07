@@ -98,7 +98,7 @@ function useScrollReveal(off: boolean) {
 export function Shell({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [open, setOpen] = useState(false);
-  const { data: settings } = useApi<Settings>("/api?p=settings");
+  const { data: settings, error: settingsError } = useApi<Settings>("/api?p=settings");
   useEffect(() => setReady(true), []);
   const bare = usePath().startsWith("/admin");
   useScrollReveal(bare);
@@ -108,6 +108,7 @@ export function Shell({ children }: { children: ReactNode }) {
   return <SettingsCtx.Provider value={settings}>
     <header className="topbar"><Link className="identity" href="/">ThinkEconomics</Link><nav className="desktop-nav">{links.map(([l, h]) => <Link key={h} href={h}>{l}</Link>)}</nav><button className="menu-toggle" onClick={() => setOpen(!open)} aria-label="Open navigation" aria-expanded={open}>{open ? <X size={24} /> : <Menu size={24} />}</button><AuthControls /></header>
     <aside className={`menu-drawer ${open ? "is-open" : ""}`}><div>{links.map(([l, h], i) => <Link key={h} href={h} onClick={() => setOpen(false)} style={{ "--i": i } as React.CSSProperties}>{l}</Link>)}</div><AuthControls /></aside>
+    {settingsError && <p style={{ margin: "2rem auto", padding: "1rem", maxWidth: 560, textAlign: "center", background: "#fae4df", color: "#7c2118", borderRadius: 8 }}>The site could not load its content. Open /api?p=health to see whether the database or Redis is failing.</p>}
     {children}
     <footer className="footer"><div><strong>ThinkEconomics</strong></div><p>{f?.text}</p><nav aria-label="Social links">{f?.instagram && <a href={f.instagram} aria-label="Instagram"><AtSign size={18} /><span>Instagram</span></a>}{f?.linkedin && <a href={f.linkedin} aria-label="LinkedIn"><Link2 size={18} /><span>LinkedIn</span></a>}<Link href="/contributors"><UsersRound size={18} /><span>Heads</span></Link></nav><span>{f?.copyright}</span></footer>
   </SettingsCtx.Provider>;

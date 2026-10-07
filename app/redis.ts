@@ -37,3 +37,9 @@ export async function invalidate() {
   const r = client();
   if (r) try { await within(r.incr("te:v")); } catch {}
 }
+
+export async function redisStatus(): Promise<string> {
+  if (!process.env.REDIS_URL) return "off (REDIS_URL not set)";
+  try { const r = client(); if (!r) return "off"; await within(r.ping(), 1500); return "ok"; }
+  catch (e) { return `error: ${(e as Error).message.slice(0, 80)}`; }
+}

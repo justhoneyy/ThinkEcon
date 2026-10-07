@@ -1,6 +1,6 @@
 import { q } from "./db";
 import { getUser, isAdminEmail, json } from "./auth";
-import { cached, invalidate } from "./redis";
+import { cached, invalidate, redisStatus } from "./redis";
 
 type Ctx = { params: Promise<{ path: string[] }> };
 
@@ -10,6 +10,12 @@ const EVENT_COLS = "slug,title,description,body,event_date::text AS event_date,l
 const CACHEABLE = new Set(["settings", "home", "posts", "podcasts", "events", "announcements", "heads", "threads", "comments"]);
 export async function pubGet(req: Request, ctx: Ctx) {
   const path = (await ctx.params).path;
+  if (path[0] === "health") {
+    let database = "ok";
+    try { await q("SELECT 1"); } catch (e) { const x = e as { code?: string; message?: string }; database = `error: ${x.code || x.message?.slice(0, 80) || "unknown"}`; }
+    const redis = await redisStatus();
+    return json({ ok: database === "ok", database, redis }, database === "ok" ? 200 : 500);
+  }
   if (!CACHEABLE.has(path[0])) return pubGetRaw(req, ctx);
   return cached(path.join("/"), () => pubGetRaw(req, ctx));
 }
