@@ -47,13 +47,14 @@ async function pubGetRaw(_: Request, ctx: Ctx) {
       }
       case "latest": return json(await latestItems());
       case "home": {
-        const [posts, podcasts, events, heads] = await Promise.all([
+        const [posts, podcasts, events, heads, cnt] = await Promise.all([
           q(`SELECT ${POST_COLS} FROM blog_posts WHERE published ORDER BY created_at DESC LIMIT 1`),
           q("SELECT title,description,video_url,thumbnail_url FROM podcasts WHERE published ORDER BY created_at DESC LIMIT 1"),
           q(`SELECT ${EVENT_COLS} FROM events WHERE published ORDER BY event_date ASC NULLS LAST, created_at DESC LIMIT 1`),
           q("SELECT id,name,role,bio,image_url,linkedin,instagram,email FROM heads WHERE published AND featured ORDER BY sort_order,created_at"),
+          q<Record<string, string>>("SELECT (SELECT count(*) FROM heads WHERE published) AS heads,(SELECT count(*) FROM blog_posts WHERE published) AS posts,(SELECT count(*) FROM podcasts WHERE published) AS podcasts,(SELECT count(*) FROM events WHERE published) AS events"),
         ]);
-        return json({ post: posts[0] || null, podcast: podcasts[0] || null, event: events[0] || null, heads, latest: (await latestItems()).slice(0, 2) });
+        return json({ counts: Object.fromEntries(Object.entries(cnt[0] || {}).map(([k, v]) => [k, Number(v)])), post: posts[0] || null, podcast: podcasts[0] || null, event: events[0] || null, heads, latest: (await latestItems()).slice(0, 2) });
       }
       case "posts":
         if (b) { const r = await q(`SELECT ${POST_COLS} FROM blog_posts WHERE published AND slug=$1`, [b]); return r[0] ? json(r[0]) : json({ error: "Not found" }, 404); }

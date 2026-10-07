@@ -7,7 +7,7 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { ArrowLeft, ArrowUpRight, AtSign, CircleUserRound, Clock3, Link2, Mail, Menu, UsersRound, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { FilmBand, ScrollBar, Stats } from "./fx";
+import { About, FilmBand, ScrollBar } from "./fx";
 
 /* ───────────── types & helpers ───────────── */
 type Post = { slug: string; title: string; summary: string; body: string; cover: string | null; created_at: string };
@@ -183,7 +183,7 @@ function LeadershipContacts({ heads }: { heads: Head[] }) {
 
 function Home() {
   const s = useSettings();
-  const { data } = useApi<{ post: Post | null; podcast: Podcast | null; event: EventItem | null; heads: Head[]; latest?: LatestItem[] }>("/api?p=home");
+  const { data } = useApi<{ post: Post | null; podcast: Podcast | null; event: EventItem | null; heads: Head[]; latest?: LatestItem[]; counts?: { heads?: number; posts?: number; podcasts?: number; events?: number } }>("/api?p=home");
   if (!s || !data) return null;
   const { heads } = data; const latest = (data.latest || []).slice(0, 2);
   const lines = s.hero.title.split("\n");
@@ -193,8 +193,7 @@ function Home() {
       <div className="hero-copy-lockup"><p className="hero-kicker">{s.hero.kicker}</p><h1>{lines.map((l, i) => <span key={i}>{l}{i < lines.length - 1 && <br />}</span>)}</h1></div>
       <div className="hero-bottom"><p>{s.hero.text}</p><Link href="/contact" className="cta">{s.hero.cta}</Link></div></section>
     <section className="ribbon"><div>{Array(3).fill(`${s.ribbon} `).join(" ")}</div></section>
-    <section className="statement" id="about"><h2>{s.about}</h2></section>
-    <Stats heads={heads.length ? 18 : 0} posts={data.post ? 12 : 0} />
+    <About text={s.about} counts={data.counts} />
     <DepartmentScroller items={s.departments} />
     <FilmBand />
     {latest.length > 0 && <section className="latest latest-home"><div className="latest-head"><h2>Latest.</h2><Link href="/latest" className="view-all">View all latest <ArrowUpRight size={16} /></Link></div><div>{latest.map((it) => <LatestCard key={it.href + it.title} it={it} />)}</div></section>}
